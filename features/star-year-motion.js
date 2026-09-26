@@ -13,11 +13,51 @@ const STAR_SPHERE_RADIUS = 300; // 「遠くの恒星」を置く半径（演出
 // 4つの季節の代表的な星座を、公転軌道上の角度に固定して配置する
 // （地球からその角度の方向を見たとき＝太陽と反対＝真夜中に見える、という設定）
 const SEASON_MARKERS = [
-  { angleDeg: 0, name: 'オリオン座', season: '冬', color: 0x9fd0ff },
-  { angleDeg: 90, name: 'しし座', season: '春', color: 0xffe08a },
-  { angleDeg: 180, name: 'さそり座', season: '夏', color: 0xff8a6a },
-  { angleDeg: 270, name: 'ペガスス座', season: '秋', color: 0xb0a0ff },
+  { angleDeg: 0, name: 'オリオン座', season: '冬', color: 0x9fd0ff, shape: 'orion' },
+  { angleDeg: 90, name: 'しし座', season: '春', color: 0xffe08a, shape: 'leo' },
+  { angleDeg: 180, name: 'さそり座', season: '夏', color: 0xff8a6a, shape: 'scorpius' },
+  { angleDeg: 270, name: 'ペガスス座', season: '秋', color: 0xb0a0ff, shape: 'pegasus' },
 ];
+
+// 各星座の「絵」用の星の並び（0〜1の相対座標）と、星をつなぐ線。
+// 実際の星座の形をイメージしやすいように簡略化したもの。
+const CONSTELLATION_SHAPES = {
+  orion: {
+    stars: [
+      [0.50, 0.06], // 左肩(ベテルギウス)
+      [0.20, 0.16], // 右肩
+      [0.36, 0.46], [0.50, 0.50], [0.64, 0.54], // 三ツ星
+      [0.24, 0.86], // 右足(リゲル)
+      [0.58, 0.92], // 左足
+    ],
+    edges: [[0, 2], [1, 2], [2, 3], [3, 4], [0, 6], [1, 5], [5, 6]],
+  },
+  leo: {
+    // 頭部の「?」を裏返したような鎌（ししの首〜頭）＋胴体の三角形
+    stars: [
+      [0.30, 0.10], [0.46, 0.06], [0.58, 0.16], [0.52, 0.30], [0.34, 0.30], [0.26, 0.20],
+      [0.34, 0.30], [0.72, 0.40], [0.90, 0.34], [0.86, 0.58], [0.34, 0.30],
+    ],
+    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [4, 7], [7, 8], [8, 9], [9, 4]],
+  },
+  scorpius: {
+    // S字にカーブする尾を持つさそり
+    stars: [
+      [0.16, 0.10], [0.24, 0.22], [0.20, 0.36], [0.30, 0.46],
+      [0.44, 0.50], [0.58, 0.56], [0.70, 0.50], [0.78, 0.62],
+      [0.74, 0.76], [0.62, 0.82],
+    ],
+    edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]],
+  },
+  pegasus: {
+    // 「秋の四辺形」＋首・頭
+    stars: [
+      [0.24, 0.20], [0.74, 0.18], [0.76, 0.68], [0.26, 0.70],
+      [0.10, 0.10], [0.02, 0.02],
+    ],
+    edges: [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [4, 5]],
+  },
+};
 
 let earthOrbitObj, groundAnchor;
 let antiSolarLine, antiSolarLineGeo, antiSolarMarker;
@@ -37,6 +77,65 @@ function makeLabelTexture(text, colorHex) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, w / 2, h / 2 + 2);
+  return new THREE.CanvasTexture(c);
+}
+
+// 星座を「点」ではなく、星をつないだ絵（星座絵）として描くテクスチャ。
+// 星と星を結ぶ線＋星の輝き＋星座名を1枚の絵にまとめる。
+function makeConstellationTexture(shapeKey, colorHex, name) {
+  const shape = CONSTELLATION_SHAPES[shapeKey];
+  const w = 300, h = 300;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const colorStr = '#' + colorHex.toString(16).padStart(6, '0');
+  const pad = 46, drawW = w - pad * 2, drawH = h - pad * 2 - 34;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const pts = shape.stars.map(([x, y]) => [pad + x * drawW, pad + y * drawH]);
+
+  // 星座の線（結び線）
+  ctx.strokeStyle = colorStr;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 3.4;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.shadowColor = colorStr;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  shape.edges.forEach(([a, b]) => {
+    ctx.moveTo(pts[a][0], pts[a][1]);
+    ctx.lineTo(pts[b][0], pts[b][1]);
+  });
+  ctx.stroke();
+
+  // 星（点）を光る円で描く
+  ctx.globalAlpha = 1;
+  pts.forEach(([x, y]) => {
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, 13);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.35, colorStr);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 星座名（絵の下に表示）
+  ctx.shadowBlur = 0;
+  ctx.font = 'bold 30px "Hiragino Sans","Yu Gothic",sans-serif';
+  ctx.fillStyle = colorStr;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(name, w / 2, h - 14);
+
   return new THREE.CanvasTexture(c);
 }
 
@@ -120,22 +219,22 @@ createTwinView({
       const angle = THREE.MathUtils.degToRad(def.angleDeg);
       const pos = new THREE.Vector3(Math.cos(angle) * STAR_SPHERE_RADIUS, 0, Math.sin(angle) * STAR_SPHERE_RADIUS);
 
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(3.2, 16, 16),
-        new THREE.MeshBasicMaterial({ color: def.color })
-      );
+      // 「点」ではなく、星をつないだ星座の絵をスプライトとして表示する
+      const pictureTex = makeConstellationTexture(def.shape, def.color, def.name);
+      const mesh = new THREE.Sprite(new THREE.SpriteMaterial({ map: pictureTex, color: 0xffffff, transparent: true, depthWrite: false }));
       mesh.position.copy(pos);
+      mesh.scale.set(30, 30, 1);
       mesh.layers.set(LAYERS.MARKER_A);
       scene.add(mesh);
 
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.glowTexB, color: def.color, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: ctx.glowTexB, color: def.color, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
       glow.position.copy(pos);
-      glow.scale.set(22, 22, 1);
+      glow.scale.set(30, 30, 1);
       glow.layers.set(LAYERS.MARKER_A);
       scene.add(glow);
 
       const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeLabelTexture(`${def.season}：${def.name}`, def.color), transparent: true, depthTest: false }));
-      label.position.copy(pos).addScaledVector(new THREE.Vector3(0, 1, 0), 12);
+      label.position.copy(pos).addScaledVector(new THREE.Vector3(0, 1, 0), 20);
       label.scale.set(26, 8, 1);
       label.layers.set(LAYERS.MARKER_A);
       scene.add(label);
@@ -176,10 +275,11 @@ createTwinView({
       diff = Math.atan2(Math.sin(diff), Math.cos(diff));
       const d = Math.abs(diff);
       const closeness = Math.max(0, 1 - d / (Math.PI / 2)); // 90°以内でだんだん強調
-      const scale = 1 + closeness * 0.9;
-      s.mesh.scale.setScalar(scale);
+      const pictureSize = 30 * (1 + closeness * 0.9);
+      s.mesh.scale.set(pictureSize, pictureSize, 1);
+      s.mesh.material.opacity = 0.55 + closeness * 0.45;
       s.glow.material.opacity = 0.35 + closeness * 0.5;
-      s.glow.scale.set(22 + closeness * 14, 22 + closeness * 14, 1);
+      s.glow.scale.set(30 + closeness * 16, 30 + closeness * 16, 1);
       if (d < nearestDiff) { nearestDiff = d; nearest = s; }
     });
 

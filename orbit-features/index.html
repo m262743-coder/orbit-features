@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地球の公転を学ぼう｜機能選択</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    background: #05060a; color: #eaf2ff; font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+  header {
+    padding: 40px 24px 16px;
+    text-align: center;
+  }
+  header h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    margin: 0 0 10px;
+  }
+  header p {
+    color: #a8bcdc; font-size: 15px; line-height: 1.8; max-width: 640px; margin: 0 auto;
+  }
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    display: block;
+    background: linear-gradient(160deg, #10182c, #0a0e1a);
+    border: 1px solid #24345a;
+    border-radius: 16px;
+    padding: 22px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: #4d8fff;
+    box-shadow: 0 12px 30px rgba(30,60,120,0.35);
+  }
+  .card .icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .card h2 { font-size: 18px; margin: 0 0 8px; }
+  .card p { font-size: 13.5px; color: #a8bcdc; line-height: 1.7; margin: 0; }
+  .card .tag {
+    display: inline-block; margin-top: 12px; font-size: 12px; font-weight: bold;
+    color: #9fd0ff; background: rgba(79,143,255,0.14); border: 1px solid rgba(79,143,255,0.35);
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .card.disabled {
+    opacity: 0.45; pointer-events: none; filter: grayscale(0.4);
+  }
+  .card.disabled .tag { color: #9db2d6; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+  footer {
+    text-align: center; color: #6f84a8; font-size: 12.5px; padding: 30px 20px 50px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🌍 地球の公転を学ぼう</h1>
+    <p>
+      ここで選ぶ機能はすべて「地球が太陽のまわりを1年かけて公転していること」が引き起こす現象です。
+      どの機能も、画面は同じ作りになっています：左が宇宙から見た「第三者視点」、右が地球からの「地表視点」。
+      時間を進めたり止めたりしながら、公転と実際に見える景色のつながりを観察してみましょう。
+    </p>
+  </header>
+  <main>
+    <div class="grid">
+      <a class="card" href="features/meteor-shower.html">
+        <span class="icon">🌠</span>
+        <h2>流星群</h2>
+        <p>地球が彗星の塵（ちり）の帯を毎年ほぼ同じ時期に通過することで、流星群が起きるしくみを観察できます。</p>
+        <span class="tag">公開中</span>
+      </a>
+
+      <a class="card" href="features/star-year-motion.html">
+        <span class="icon">🌌</span>
+        <h2>星の年周運動</h2>
+        <p>地球の公転によって「太陽と反対の方向（真夜中の空）」が1年かけて移り変わり、季節ごとに見える星座が変わるしくみを観察できます。</p>
+        <span class="tag">公開中</span>
+      </a>
+
+      <div class="card disabled">
+        <span class="icon">🌗</span>
+        <h2>季節の変化・日照時間</h2>
+        <p>地軸の傾きと公転により、昼の長さや太陽の高さが季節でどう変わるかを観察する機能（追加を検討中）。</p>
+        <span class="tag">近日公開</span>
+      </div>
+
+      <div class="card disabled">
+        <span class="icon">✨</span>
+        <h2>年周視差</h2>
+        <p>地球が公転することで、近くの恒星の見える位置がわずかにずれる「年周視差」を観察する機能（追加を検討中）。</p>
+        <span class="tag">近日公開</span>
+      </div>
+    </div>
+  </main>
+  <footer>
+    各機能ページの「🏠 機能選択にもどる」ボタンで、このページに戻れます。
+  </footer>
+</body>
+</html>

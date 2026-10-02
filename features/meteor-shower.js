@@ -145,7 +145,7 @@ createTwinView({
     getDirection: (state) => new THREE.Vector3(-Math.sin(state.earthAngle), 0, Math.cos(state.earthAngle)),
   },
   layerToggleButtons: [
-    { id: 'nodeInSkyBtn', layer: LAYERS.MARKER_A, offLabel: '🍩 空に交点を表示', onLabel: '🍩 空の交点を隠す' },
+    { id: 'nodeInSkyBtn', layer: LAYERS.MARKER_A, offLabel: '🔍 詳細表示', onLabel: '🔍 詳細を隠す' },
   ],
 
   helpTitle: '🌠 このシミュレーションでわかること',
@@ -163,7 +163,7 @@ createTwinView({
       <li>下の時間バーを動かすと、時間を自由に進めたり戻したりできます。</li>
       <li>「地球の動きを止める」を押すと、公転がストップして流星群も止まります。</li>
       <li>「放射点を追いかける」を押すと、流れ星の出どころを自動で見続けられます。</li>
-      <li>「空に交点を表示」を押すと、地球からの空にも交点の目印を映して確認できます。</li>
+      <li>「詳細表示」を押すと、交点の目印や、それぞれの通り道（軌道）の名前を、地球からの空にも映して確認できます。</li>
     </ul>
   `,
   formatTimeLabel: (t) => {
@@ -192,6 +192,29 @@ createTwinView({
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
       const mat = new THREE.LineBasicMaterial({ color: 0x66d9ff, transparent: true, opacity: 0.35 });
       scene.add(new THREE.Line(geo, mat));
+
+      // 彗星の塵の軌道の名前（「詳細表示」ボタンと連動して表示/非表示）
+      const cometLabelPos = cometOrbitPoint(THREE, Math.PI * 0.62);
+      const cometOrbitLabel = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeLabelTexture(THREE, '彗星の塵の軌道'), transparent: true, depthTest: false }));
+      cometOrbitLabel.position.copy(cometLabelPos).addScaledVector(new THREE.Vector3(0, 1, 0), 4.5);
+      cometOrbitLabel.scale.set(13, 4.9, 1);
+      cometOrbitLabel.layers.set(LAYERS.MARKER_A);
+      scene.add(cometOrbitLabel);
+    }
+
+    // 地球の公転軌道の名前（「詳細表示」ボタンと連動して表示/非表示）
+    {
+      const earthOrbitLabelAngle = NODE_ANGLE + Math.PI * 0.62;
+      const earthOrbitLabelPos = new THREE.Vector3(
+        Math.cos(earthOrbitLabelAngle) * EARTH_ORBIT_RADIUS,
+        0,
+        Math.sin(earthOrbitLabelAngle) * EARTH_ORBIT_RADIUS
+      );
+      const earthOrbitLabel = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeLabelTexture(THREE, '地球の公転軌道'), transparent: true, depthTest: false }));
+      earthOrbitLabel.position.copy(earthOrbitLabelPos).addScaledVector(new THREE.Vector3(0, 1, 0), 4.5);
+      earthOrbitLabel.scale.set(13, 4.9, 1);
+      earthOrbitLabel.layers.set(LAYERS.MARKER_A);
+      scene.add(earthOrbitLabel);
     }
 
     // 彗星の塵の帯
